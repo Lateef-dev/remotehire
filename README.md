@@ -2,7 +2,7 @@
 
 RemoteHire connects remote-first companies with developers. Employers post jobs and move applicants through a hiring pipeline. Candidates search and filter roles, save jobs, apply in one click and track every application.
 
-**Stack:** Next.js 16 (App Router) · React 19 · Redux Toolkit + RTK Query · Tailwind CSS 4 · Node.js · Express 5 · MongoDB + Mongoose · Zod · JWT (httpOnly cookies) · Vitest + Supertest
+**Stack:** TypeScript (strict, end to end) · Next.js 16 (App Router) · React 19 · Redux Toolkit + RTK Query · Tailwind CSS 4 · Node.js · Express 5 · MongoDB + Mongoose · Zod · JWT (httpOnly cookies) · Vitest + Supertest
 
 ![Job search](docs/screenshots/jobs.png)
 
@@ -24,6 +24,8 @@ RemoteHire connects remote-first companies with developers. Employers post jobs 
 - Company profile (name, logo, website, about) shown on every job
 
 **Engineering**
+- Written in strict TypeScript on both sides. API request and response shapes are typed from the Zod schemas and Mongoose models, and every RTK Query endpoint is typed
+- The API runs `.ts` files directly with Node's built-in type stripping, so there is no build step to deploy
 - Role-based access control enforced on the API (employers cannot see other employers' applicants, candidates cannot post jobs)
 - Zod validation on every request body and query, with field-level error messages shown in the UI
 - JWT stored in an httpOnly cookie. Next.js proxies `/api/*` to Express, so the cookie is first-party in every environment
@@ -48,16 +50,17 @@ remotehire/
 │   └── src/
 │       ├── app/            Routes: /, /jobs, /jobs/[id], /dashboard, /dashboard/jobs/..., /profile, /login, /register
 │       ├── components/     JobCard, JobForm, AuthForm, RequireAuth, dashboards, UI primitives
-│       ├── store/          Redux store, RTK Query API slice (cache tags + invalidation), toast slice
-│       └── lib/            Formatting helpers and shared constants
+│       ├── store/          Redux store, typed hooks, RTK Query API slice (cache tags + invalidation), toast slice
+│       └── lib/            Shared types, formatting helpers and constants
 └── server/                 Express API (deploys to Render, Railway or Fly.io)
     ├── src/
     │   ├── models/         User, Job, Application (Mongoose)
     │   ├── controllers/    auth, jobs, applications, users
     │   ├── routes/         Route definitions with auth, role and validation middleware
     │   ├── middleware/     requireAuth, requireRole, validate (zod), error handler
-    │   ├── utils/          Zod schemas, constants, ApiError
-    │   └── scripts/seed.js Demo data
+    │   ├── utils/          Zod schemas (+ inferred input types), constants, ApiError
+    │   ├── types/          Express Request augmentation (req.user)
+    │   └── scripts/seed.ts Demo data
     └── tests/              Vitest + Supertest + in-memory MongoDB
 ```
 
@@ -95,7 +98,7 @@ Errors always look like `{ "error": { "message": "...", "details": [{ "path": ".
 
 ## Run it locally
 
-You need Node.js 20 or newer and MongoDB (local, Docker, or a free MongoDB Atlas cluster).
+You need Node.js 22.18 or newer (for native TypeScript support) and MongoDB (local, Docker, or a free MongoDB Atlas cluster).
 
 ```bash
 # 1. Start MongoDB (or use an Atlas connection string in server/.env)
@@ -119,11 +122,14 @@ Demo accounts (password `password123`), also available as one-click buttons on t
 - Candidate: `candidate@remotehire.dev`
 - Employer: `hiring@lumenpay.dev`
 
-Run the API tests (they start an in-memory MongoDB, so nothing else is needed):
+Type-check and test:
 
 ```bash
-cd server && npm test
+cd server && npm run typecheck && npm test   # tests start an in-memory MongoDB
+cd client && npm run typecheck
 ```
+
+To run the tests against a MongoDB you already have running, set `MONGO_URI_TEST=mongodb://127.0.0.1:27017`.
 
 ## Deploy
 
