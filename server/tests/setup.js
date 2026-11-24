@@ -8,8 +8,13 @@ process.env.JWT_SECRET = 'test-secret';
 let mongo;
 
 beforeAll(async () => {
-  mongo = await MongoMemoryServer.create();
-  await mongoose.connect(mongo.getUri());
+  // Use an existing MongoDB when MONGO_URI_TEST is set, otherwise start an in-memory one.
+  let uri = process.env.MONGO_URI_TEST;
+  if (!uri) {
+    mongo = await MongoMemoryServer.create();
+    uri = mongo.getUri();
+  }
+  await mongoose.connect(uri, { dbName: `remotehire_test_${process.pid}` });
 });
 
 afterEach(async () => {
@@ -18,6 +23,7 @@ afterEach(async () => {
 });
 
 afterAll(async () => {
+  if (process.env.MONGO_URI_TEST) await mongoose.connection.dropDatabase();
   await mongoose.disconnect();
   await mongo?.stop();
 });

@@ -70,14 +70,24 @@ async function seed() {
     })
   );
 
-  const [demo] = candidateDocs;
+  const [demo, tolu] = candidateDocs;
   const applications = [
-    { job: jobs[1], status: 'reviewing' },
-    { job: jobs[2], status: 'shortlisted' },
-    { job: jobs[7], status: 'submitted' },
+    { who: demo, job: jobs[0], status: 'submitted' },
+    { who: demo, job: jobs[1], status: 'reviewing' },
+    { who: demo, job: jobs[2], status: 'shortlisted' },
+    { who: demo, job: jobs[7], status: 'submitted' },
+    { who: tolu, job: jobs[0], status: 'shortlisted' },
+    { who: tolu, job: jobs[3], status: 'reviewing' },
   ];
-  for (const { job, status } of applications) {
-    await Application.create({ job: job._id, candidate: demo._id, employer: job.employer, resumeUrl: demo.resumeUrl, coverLetter: 'I would love to join your team.', status });
+  for (const { who, job, status } of applications) {
+    await Application.create({
+      job: job._id,
+      candidate: who._id,
+      employer: job.employer,
+      resumeUrl: who.resumeUrl,
+      coverLetter: `Hi ${job.companyName} team, I have spent the last few years building React and Node.js products for remote teams, and I would love to bring that experience to this role.`,
+      status,
+    });
     await Job.updateOne({ _id: job._id }, { $inc: { applicationsCount: 1 } });
   }
   demo.savedJobs = [jobs[0]._id, jobs[11]._id];
