@@ -3,6 +3,7 @@
 import { useState, type ChangeEvent, type FormEvent, type InputHTMLAttributes } from 'react';
 import { useAppDispatch } from '@/store';
 import RequireAuth from '@/components/RequireAuth';
+import ChangePasswordForm from '@/components/ChangePasswordForm';
 import { Alert, Field } from '@/components/ui';
 import { useUpdateProfileMutation } from '@/store/api';
 import { pushToast } from '@/store/toastSlice';
@@ -93,6 +94,8 @@ function ProfileForm({ user }: { user: User }) {
           <button className="btn-primary" disabled={isLoading}>{isLoading ? 'Saving…' : 'Save profile'}</button>
         </div>
       </form>
+
+      <ChangePasswordForm />
     </div>
   );
 }

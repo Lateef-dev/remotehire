@@ -110,6 +110,13 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
               onChange={set('password')}
             />
           </Field>
+          {!isRegister && (
+            <div className="-mt-2 text-right">
+              <Link href="/forgot-password" className="text-sm font-medium text-brand-700 hover:underline">
+                Forgot password?
+              </Link>
+            </div>
+          )}
 
           <button className="btn-primary w-full" disabled={isLoading}>
             {isLoading ? 'Please wait…' : isRegister ? 'Create account' : 'Sign in'}

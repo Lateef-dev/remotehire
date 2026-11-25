@@ -8,6 +8,12 @@ RemoteHire connects remote-first companies with developers. Employers post jobs 
 
 ## Features
 
+**Accounts**
+- Sign up as a candidate or an employer, then sign in and out
+- Forgot password: request a reset link by email, then choose a new password. Links are single-use and expire after 30 minutes
+- Change password from the profile page
+- Changing or resetting a password signs you out on every other device
+
 **Candidates**
 - Search jobs by title, company or skill, with filters for job type, level, region, minimum salary and skills
 - Filters live in the URL, so every search can be shared and bookmarked
@@ -28,6 +34,9 @@ RemoteHire connects remote-first companies with developers. Employers post jobs 
 - The API runs `.ts` files directly with Node's built-in type stripping, so there is no build step to deploy
 - Role-based access control enforced on the API (employers cannot see other employers' applicants, candidates cannot post jobs)
 - Zod validation on every request body and query, with field-level error messages shown in the UI
+- Password reset tokens are 256-bit random values. Only their SHA-256 hash is stored, and the forgot-password endpoint gives the same answer whether or not the email exists, so it can't reveal who has an account
+- Each JWT carries a session version that goes up on every password change, so older sessions stop working at once
+- Demo accounts are protected: their public password can't be reset or changed
 - JWT stored in an httpOnly cookie. Next.js proxies `/api/*` to Express, so the cookie is first-party in every environment
 - Helmet, CORS allow-list, rate-limited auth routes, bcrypt password hashing, safe `?next=` redirects
 - One application per candidate per job, enforced by a unique MongoDB index
@@ -80,6 +89,9 @@ Browser → Next.js (`/api/*` rewrite) → Express → MongoDB. RTK Query caches
 | POST | `/api/auth/login` | Public | Sign in (sets cookie) |
 | POST | `/api/auth/logout` | Public | Clear the session |
 | GET | `/api/auth/me` | Signed in | Current user |
+| POST | `/api/auth/forgot-password` | Public | Email a password reset link |
+| POST | `/api/auth/reset-password` | Public | Set a new password with the emailed token (signs in) |
+| PATCH | `/api/auth/password` | Signed in | Change password (needs the current one) |
 | PATCH | `/api/users/me` | Signed in | Update profile (fields depend on role) |
 | GET | `/api/jobs` | Public | Search: `q, type, level, region, tags, minSalary, sort, page, limit` |
 | GET | `/api/jobs/meta` | Public | Filter options, popular tags, counts |
@@ -134,7 +146,7 @@ To run the tests against a MongoDB you already have running, set `MONGO_URI_TEST
 ## Deploy
 
 1. **Database**: create a free MongoDB Atlas cluster and copy its connection string.
-2. **API**: deploy `server/` to Render (or Railway). Build command `npm install`, start command `npm start`. Set `MONGODB_URI`, `JWT_SECRET`, `NODE_ENV=production` and `CLIENT_ORIGIN=https://your-app.vercel.app`. Run `npm run seed` once if you want demo data.
+2. **API**: deploy `server/` to Render (or Railway). Build command `npm install`, start command `npm start`. Set `MONGODB_URI`, `JWT_SECRET`, `NODE_ENV=production` and `CLIENT_ORIGIN=https://your-app.vercel.app`. To send password reset emails, also set `RESEND_API_KEY` (free at [resend.com](https://resend.com)) and optionally `EMAIL_FROM`. Run `npm run seed` once if you want demo data.
 3. **Web**: import the repo on Vercel with `client` as the root directory, and set `API_URL` to the API's URL. Because Vercel proxies `/api/*`, cookies work without any cross-site setup.
 
 ## What I would add next

@@ -57,6 +57,17 @@ export const api = createApi({
         dispatch(api.util.resetApiState());
       },
     }),
+    forgotPassword: build.mutation<{ message: string }, { email: string }>({
+      query: (body) => ({ url: '/auth/forgot-password', method: 'POST', body }),
+    }),
+    resetPassword: build.mutation<Session, { token: string; password: string }>({
+      query: (body) => ({ url: '/auth/reset-password', method: 'POST', body }),
+      // The reset signs the user in, so refresh everything tied to the session.
+      invalidatesTags: ['Me', 'Job', 'MyApplications', 'MyJobs', 'Saved'],
+    }),
+    changePassword: build.mutation<Session, { currentPassword: string; newPassword: string }>({
+      query: (body) => ({ url: '/auth/password', method: 'PATCH', body }),
+    }),
     updateProfile: build.mutation<{ user: User }, ProfileInput>({
       query: (body) => ({ url: '/users/me', method: 'PATCH', body }),
       invalidatesTags: ['Me', 'Jobs', 'MyJobs'],
@@ -134,6 +145,9 @@ export const {
   useRegisterMutation,
   useLogoutMutation,
   useUpdateProfileMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
+  useChangePasswordMutation,
   useGetJobsQuery,
   useGetJobMetaQuery,
   useGetJobQuery,

@@ -23,6 +23,28 @@ export const loginSchema = z.object({
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 
+const newPassword = z.string().min(8, 'Password must be at least 8 characters').max(100);
+
+export const forgotPasswordSchema = z.object({
+  email: z.email().trim().toLowerCase(),
+});
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+export const resetPasswordSchema = z.object({
+  token: z.string().regex(/^[a-f0-9]{64}$/, 'This reset link is invalid'),
+  password: newPassword,
+});
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword,
+}).refine((d) => d.currentPassword !== d.newPassword, {
+  message: 'New password must be different from your current password',
+  path: ['newPassword'],
+});
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
 export const profileSchema = z.object({
   name: z.string().trim().min(2).max(80).optional(),
   headline: z.string().trim().max(120).optional(),
