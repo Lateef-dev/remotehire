@@ -72,3 +72,12 @@ export const initials = (name = ''): string =>
     .slice(0, 2)
     .map((p) => p[0].toUpperCase())
     .join('');
+
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/** Uploaded resumes are served by the API behind the same /api proxy, so the session cookie applies. */
+export const resumeFileHref = (fileId: string) => `/api/resumes/${fileId}`;

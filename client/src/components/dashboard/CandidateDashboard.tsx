@@ -37,10 +37,10 @@ export default function CandidateDashboard({ user }: { user: User }) {
         <Link href="/jobs" className="btn-primary">Find more jobs</Link>
       </div>
 
-      {!user.resumeUrl && (
+      {!user.resumeUrl && !user.resumeFile && (
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          <p>Add a resume link to your profile so you can apply in one click.</p>
-          <Link href="/profile" className="btn bg-amber-900 text-white hover:bg-amber-800">Complete profile</Link>
+          <p>Upload your resume to your profile so you can apply in one click.</p>
+          <Link href="/profile" className="btn bg-amber-900 text-white hover:bg-amber-800">Upload resume</Link>
         </div>
       )}
 

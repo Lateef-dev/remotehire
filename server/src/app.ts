@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.routes.ts';
 import jobRoutes from './routes/jobs.routes.ts';
 import applicationRoutes from './routes/applications.routes.ts';
 import userRoutes from './routes/users.routes.ts';
+import resumeRoutes from './routes/resumes.routes.ts';
 import { errorHandler, notFound } from './middleware/error.ts';
 
 export function createApp(): Express {
@@ -27,6 +28,7 @@ export function createApp(): Express {
   app.use('/api/jobs', jobRoutes);
   app.use('/api/applications', applicationRoutes);
   app.use('/api/users', userRoutes);
+  app.use('/api/resumes', resumeRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

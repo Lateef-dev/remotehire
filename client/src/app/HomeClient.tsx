@@ -76,7 +76,7 @@ export default function HomeClient() {
         <div className="grid gap-4 md:grid-cols-3">
           {[
             ['Search that respects time zones', 'Worldwide roles show up for every region, so you never miss a job you can actually take.'],
-            ['Apply in one click', 'Save your resume link once, then apply with an optional cover letter.'],
+            ['Apply in one click', 'Upload your resume once, then apply with an optional cover letter.'],
             ['Track every application', 'See when an employer reviews, shortlists or hires you.'],
           ].map(([title, body]) => (
             <div key={title} className="card p-6">

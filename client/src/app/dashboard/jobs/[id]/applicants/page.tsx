@@ -9,7 +9,7 @@ import { EmptyState, PageLoader, StatusBadge } from '@/components/ui';
 import { useGetApplicantsQuery, useUpdateApplicationStatusMutation } from '@/store/api';
 import { pushToast } from '@/store/toastSlice';
 import { APPLICATION_STATUSES } from '@/lib/constants';
-import { errorMessage, initials, label, timeAgo } from '@/lib/format';
+import { errorMessage, initials, label, resumeFileHref, timeAgo } from '@/lib/format';
 import type { Applicant, ApplicationStatus } from '@/lib/types';
 
 function ApplicantCard({ application }: { application: Applicant }) {
@@ -48,7 +48,11 @@ function ApplicantCard({ application }: { application: Applicant }) {
             {APPLICATION_STATUSES.map((s) => <option key={s} value={s}>{label(s)}</option>)}
           </select>
           <div className="flex gap-3 text-sm font-semibold text-brand-700">
-            <a href={application.resumeUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">Resume ↗</a>
+            {application.resumeFile ? (
+              <a href={resumeFileHref(application.resumeFile.fileId)} target="_blank" rel="noopener noreferrer" className="hover:underline" title={application.resumeFile.name}>Resume ↗</a>
+            ) : (
+              application.resumeUrl && <a href={application.resumeUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">Resume ↗</a>
+            )}
             {candidate.portfolioUrl && <a href={candidate.portfolioUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">Portfolio ↗</a>}
           </div>
         </div>

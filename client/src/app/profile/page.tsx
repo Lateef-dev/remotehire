@@ -4,6 +4,7 @@ import { useState, type ChangeEvent, type FormEvent, type InputHTMLAttributes } 
 import { useAppDispatch } from '@/store';
 import RequireAuth from '@/components/RequireAuth';
 import ChangePasswordForm from '@/components/ChangePasswordForm';
+import ResumeUpload from '@/components/ResumeUpload';
 import { Alert, Field } from '@/components/ui';
 import { useUpdateProfileMutation } from '@/store/api';
 import { pushToast } from '@/store/toastSlice';
@@ -80,8 +81,13 @@ function ProfileForm({ user }: { user: User }) {
               <Field label="Location" htmlFor="location">{input('location', { placeholder: 'Lagos, Nigeria' })}</Field>
             </div>
             <Field label="Skills" htmlFor="skills" hint="Comma separated.">{input('skills', { placeholder: 'react, next.js, tailwind' })}</Field>
+            <div>
+              <p className="label">Resume file</p>
+              <ResumeUpload user={user} />
+              <p className="mt-1 text-xs text-muted">Saved right away and sent with your applications. Employers only see it when you apply to their jobs.</p>
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Resume link" htmlFor="resumeUrl" hint="Used by default when you apply.">{input('resumeUrl', { type: 'url', placeholder: 'https://…' })}</Field>
+              <Field label="Resume link (optional)" htmlFor="resumeUrl" hint="Or a link, such as Google Drive or LinkedIn.">{input('resumeUrl', { type: 'url', placeholder: 'https://…' })}</Field>
               <Field label="Portfolio / GitHub" htmlFor="portfolioUrl">{input('portfolioUrl', { type: 'url', placeholder: 'https://…' })}</Field>
             </div>
             <Field label="Short bio" htmlFor="bio">

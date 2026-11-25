@@ -15,6 +15,14 @@ export interface Company {
   about?: string;
 }
 
+export interface ResumeFile {
+  fileId: string;
+  name: string;
+  size: number;
+  contentType: string;
+  uploadedAt: string;
+}
+
 export interface User {
   _id: string;
   name: string;
@@ -25,6 +33,7 @@ export interface User {
   skills?: string[];
   location?: string;
   resumeUrl?: string;
+  resumeFile?: ResumeFile;
   portfolioUrl?: string;
   savedJobs?: string[];
   company?: Company;
@@ -122,7 +131,8 @@ export interface Candidate {
 export interface Application {
   _id: string;
   status: ApplicationStatus;
-  resumeUrl: string;
+  resumeUrl?: string;
+  resumeFile?: { fileId: string; name: string };
   coverLetter?: string;
   createdAt: string;
 }

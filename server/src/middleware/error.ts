@@ -22,6 +22,9 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
   } else if ((err as { code?: number })?.code === 11000) {
     status = 409;
     message = 'That record already exists';
+  } else if ((err as { type?: string })?.type === 'entity.too.large') {
+    status = 413;
+    message = 'That file is too large. The limit is 4 MB.';
   } else if (typeof (err as { status?: unknown })?.status === 'number') {
     // e.g. body-parser errors for malformed JSON
     status = (err as { status: number }).status;

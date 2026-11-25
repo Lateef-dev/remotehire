@@ -10,6 +10,14 @@ export interface Company {
   about?: string;
 }
 
+export interface ResumeFile {
+  fileId: Types.ObjectId;
+  name: string;
+  size: number;
+  contentType: string;
+  uploadedAt: Date;
+}
+
 export interface IUser {
   name: string;
   email: string;
@@ -20,6 +28,7 @@ export interface IUser {
   skills: string[];
   location?: string;
   resumeUrl?: string;
+  resumeFile?: ResumeFile;
   portfolioUrl?: string;
   savedJobs: Types.ObjectId[];
   company?: Company;
@@ -51,6 +60,19 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
     skills: [{ type: String, trim: true, lowercase: true }],
     location: { type: String, trim: true, maxlength: 80 },
     resumeUrl: { type: String, trim: true },
+    resumeFile: {
+      type: new Schema<ResumeFile>(
+        {
+          fileId: { type: Schema.Types.ObjectId, required: true },
+          name: { type: String, required: true },
+          size: { type: Number, required: true },
+          contentType: { type: String, required: true },
+          uploadedAt: { type: Date, required: true },
+        },
+        { _id: false }
+      ),
+      default: undefined,
+    },
     portfolioUrl: { type: String, trim: true },
     savedJobs: [{ type: Schema.Types.ObjectId, ref: 'Job' }],
     // Auth housekeeping (never sent to clients)
