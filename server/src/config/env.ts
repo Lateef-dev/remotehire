@@ -11,6 +11,9 @@ export const env = {
   jwtSecret: required('JWT_SECRET', process.env.NODE_ENV === 'production' ? undefined : 'dev-only-secret-change-me'),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '7d',
   clientOrigin: process.env.CLIENT_ORIGIN ?? 'http://localhost:3000',
+  /** Optional: without it, emails are printed to the server log in development. */
+  resendApiKey: process.env.RESEND_API_KEY,
+  emailFrom: process.env.EMAIL_FROM ?? 'RemoteHire <onboarding@resend.dev>',
 };
 
 export const isProd = env.nodeEnv === 'production';

@@ -1,5 +1,6 @@
 import mongoose, { Schema, type HydratedDocument, type Model, type Types } from 'mongoose';
 import bcrypt from 'bcryptjs';
+import crypto from 'node:crypto';
 import { ROLES, type Role } from '../utils/constants.ts';
 
 export interface Company {
@@ -22,12 +23,17 @@ export interface IUser {
   portfolioUrl?: string;
   savedJobs: Types.ObjectId[];
   company?: Company;
+  /** Bumped on every password change; JWTs carry it, so older sessions stop working. */
+  sessionVersion: number;
+  passwordResetTokenHash?: string;
+  passwordResetExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
 
 interface IUserMethods {
   comparePassword(candidate: string): Promise<boolean>;
+  createPasswordResetToken(): string;
 }
 
 type UserModel = Model<IUser, object, IUserMethods>;
@@ -47,6 +53,10 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
     resumeUrl: { type: String, trim: true },
     portfolioUrl: { type: String, trim: true },
     savedJobs: [{ type: Schema.Types.ObjectId, ref: 'Job' }],
+    // Auth housekeeping (never sent to clients)
+    sessionVersion: { type: Number, default: 0, select: false },
+    passwordResetTokenHash: { type: String, select: false, index: true },
+    passwordResetExpires: { type: Date, select: false },
     // Employer profile
     company: {
       name: { type: String, trim: true, maxlength: 100 },
@@ -58,19 +68,36 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
   { timestamps: true }
 );
 
+export const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
+
+export const hashResetToken = (token: string) => crypto.createHash('sha256').update(token).digest('hex');
+
 userSchema.pre('save', async function hashPassword() {
   if (!this.isModified('password')) return;
   this.password = await bcrypt.hash(this.password, 12);
+  // Every session issued before this change becomes invalid.
+  if (!this.isNew) this.sessionVersion = (this.sessionVersion ?? 0) + 1;
 });
 
 userSchema.method('comparePassword', function comparePassword(this: UserDoc, candidate: string) {
   return bcrypt.compare(candidate, this.password);
 });
 
+/** Creates a single-use reset token. Only its SHA-256 hash is stored; the raw token goes in the email. */
+userSchema.method('createPasswordResetToken', function createPasswordResetToken(this: UserDoc) {
+  const token = crypto.randomBytes(32).toString('hex');
+  this.passwordResetTokenHash = hashResetToken(token);
+  this.passwordResetExpires = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+  return token;
+});
+
 userSchema.set('toJSON', {
   versionKey: false,
   transform: (_doc, ret: Partial<IUser>) => {
     delete ret.password;
+    delete ret.sessionVersion;
+    delete ret.passwordResetTokenHash;
+    delete ret.passwordResetExpires;
     return ret;
   },
 });

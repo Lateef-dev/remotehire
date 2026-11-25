@@ -18,7 +18,10 @@ async function resolveUser(req: Request): Promise<UserDoc | null> {
   if (!token) return null;
   try {
     const payload = jwt.verify(token, env.jwtSecret) as JwtPayload;
-    return await User.findById(payload.sub);
+    const user = await User.findById(payload.sub).select('+sessionVersion');
+    // Sessions created before a password change or reset are no longer valid.
+    if (!user || (payload.v ?? 0) !== (user.sessionVersion ?? 0)) return null;
+    return user;
   } catch {
     return null;
   }
