@@ -18,14 +18,14 @@ RemoteHire connects remote-first companies with developers. Employers post jobs 
 - Search jobs by title, company or skill, with filters for job type, level, region, minimum salary and skills
 - Filters live in the URL, so every search can be shared and bookmarked
 - Worldwide roles appear under every region filter, so candidates never miss a job they can take
-- Apply with a resume link (saved on the profile) and an optional cover letter
+- Upload a resume (PDF or Word, up to 4 MB, drag and drop or file picker) or share a link, then apply with an optional cover letter
 - Dashboard that tracks each application's status (submitted, in review, shortlisted, hired), with withdraw
 - Save jobs for later
 
 **Employers**
 - Post, edit, close, reopen and delete jobs
 - Dashboard with open roles, applicant totals and a per-job pipeline bar
-- Review applicants by status, read cover letters and open resumes
+- Review applicants by status, read cover letters and open uploaded or linked resumes
 - Move applicants through the pipeline; candidates see the change on their dashboard
 - Company profile (name, logo, website, about) shown on every job
 
@@ -34,6 +34,7 @@ RemoteHire connects remote-first companies with developers. Employers post jobs 
 - The API runs `.ts` files directly with Node's built-in type stripping, so there is no build step to deploy
 - Role-based access control enforced on the API (employers cannot see other employers' applicants, candidates cannot post jobs)
 - Zod validation on every request body and query, with field-level error messages shown in the UI
+- Uploaded resumes are stored in MongoDB GridFS (no extra storage service). The file type is checked from the file's own bytes, not the name, and a resume can only be opened by its owner and by employers who received it in an application. Files still used by an application are kept when the candidate replaces their profile resume
 - Password reset tokens are 256-bit random values. Only their SHA-256 hash is stored, and the forgot-password endpoint gives the same answer whether or not the email exists, so it can't reveal who has an account
 - Each JWT carries a session version that goes up on every password change, so older sessions stop working at once
 - Demo accounts are protected: their public password can't be reset or changed
@@ -77,9 +78,9 @@ Browser → Next.js (`/api/*` rewrite) → Express → MongoDB. RTK Query caches
 
 ## Data model
 
-- **User**: name, email, password (bcrypt), role (`candidate` or `employer`), candidate profile (headline, skills, resumeUrl, savedJobs), employer company (name, logo, website, about)
+- **User**: name, email, password (bcrypt), role (`candidate` or `employer`), candidate profile (headline, skills, resumeUrl, resumeFile, savedJobs), employer company (name, logo, website, about)
 - **Job**: employer, title, description, requirements, type, level, region, timezone, salary range, tags, status (`open` or `closed`), applicationsCount
-- **Application**: job, candidate, employer, resumeUrl, coverLetter, status. Unique on `(job, candidate)`
+- **Application**: job, candidate, employer, resumeUrl and/or resumeFile, coverLetter, status. Unique on `(job, candidate)`
 
 ## API
 
@@ -93,6 +94,9 @@ Browser → Next.js (`/api/*` rewrite) → Express → MongoDB. RTK Query caches
 | POST | `/api/auth/reset-password` | Public | Set a new password with the emailed token (signs in) |
 | PATCH | `/api/auth/password` | Signed in | Change password (needs the current one) |
 | PATCH | `/api/users/me` | Signed in | Update profile (fields depend on role) |
+| PUT | `/api/users/me/resume` | Candidate | Upload a resume (raw file body, name in `X-File-Name`) |
+| DELETE | `/api/users/me/resume` | Candidate | Remove the profile resume |
+| GET | `/api/resumes/:fileId` | Owner or receiving employer | Open an uploaded resume |
 | GET | `/api/jobs` | Public | Search: `q, type, level, region, tags, minSalary, sort, page, limit` |
 | GET | `/api/jobs/meta` | Public | Filter options, popular tags, counts |
 | GET | `/api/jobs/:id` | Public | Job detail, plus viewer state (applied, saved, owner) |
@@ -151,7 +155,6 @@ To run the tests against a MongoDB you already have running, set `MONGO_URI_TEST
 
 ## What I would add next
 
-- Resume file uploads with Supabase Storage or Firebase Storage instead of links
 - Email notifications when an application's status changes
 - Full-text search with MongoDB Atlas Search
 - Company pages listing all of a company's open roles

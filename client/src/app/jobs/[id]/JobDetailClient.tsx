@@ -6,6 +6,7 @@ import { useState, type FormEvent } from 'react';
 import { useAppDispatch } from '@/store';
 import { useApplyToJobMutation, useGetJobQuery, useGetMeQuery, useToggleSavedJobMutation } from '@/store/api';
 import { pushToast } from '@/store/toastSlice';
+import ResumeUpload from '@/components/ResumeUpload';
 import { Alert, CompanyLogo, EmptyState, Field, PageLoader, StatusBadge } from '@/components/ui';
 import { errorMessage, formatSalary, label, timeAgo } from '@/lib/format';
 import type { Job, JobViewer, User } from '@/lib/types';
@@ -15,6 +16,8 @@ function ApplyPanel({ job, viewer, user }: { job: Job; viewer: JobViewer | null;
   const [open, setOpen] = useState(false);
   const [coverLetter, setCoverLetter] = useState('');
   const [resumeUrl, setResumeUrl] = useState(user?.resumeUrl ?? '');
+  // Prefer an uploaded file; fall back to the profile link if that's all they have.
+  const [source, setSource] = useState<'file' | 'link'>(!user?.resumeFile && user?.resumeUrl ? 'link' : 'file');
   const [apply, { isLoading, error }] = useApplyToJobMutation();
 
   if (!user) {
@@ -56,7 +59,12 @@ function ApplyPanel({ job, viewer, user }: { job: Job; viewer: JobViewer | null;
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      await apply({ id: job._id, coverLetter: coverLetter || undefined, resumeUrl: resumeUrl || undefined }).unwrap();
+      await apply({
+        id: job._id,
+        coverLetter: coverLetter || undefined,
+        resumeSource: source,
+        resumeUrl: source === 'link' ? resumeUrl || undefined : undefined,
+      }).unwrap();
       dispatch(pushToast(`Application sent to ${job.companyName}`));
     } catch {
       /* error shown below */
@@ -66,15 +74,41 @@ function ApplyPanel({ job, viewer, user }: { job: Job; viewer: JobViewer | null;
   return (
     <form onSubmit={submit} className="space-y-4">
       <Alert>{error && errorMessage(error)}</Alert>
-      <Field label="Resume link" htmlFor="resumeUrl" hint="A public link to your CV (Google Drive, Dropbox, your site).">
-        <input id="resumeUrl" type="url" required className="input" placeholder="https://…" value={resumeUrl} onChange={(e) => setResumeUrl(e.target.value)} />
-      </Field>
+      <div>
+        <p className="label">Resume</p>
+        <div className="mb-3 grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1" role="radiogroup" aria-label="How to share your resume">
+          {(
+            [
+              ['file', 'Upload a file'],
+              ['link', 'Share a link'],
+            ] as const
+          ).map(([value, text]) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={source === value}
+              onClick={() => setSource(value)}
+              className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${source === value ? 'bg-white shadow-sm' : 'text-muted'}`}
+            >
+              {text}
+            </button>
+          ))}
+        </div>
+        {source === 'file' ? (
+          <ResumeUpload user={user} />
+        ) : (
+          <Field htmlFor="resumeUrl" hint="A public link to your CV (Google Drive, Dropbox, LinkedIn or your own site).">
+            <input id="resumeUrl" type="url" required className="input" placeholder="https://…" aria-label="Resume link" value={resumeUrl} onChange={(e) => setResumeUrl(e.target.value)} />
+          </Field>
+        )}
+      </div>
       <Field label="Cover letter (optional)" htmlFor="coverLetter">
         <textarea id="coverLetter" rows={5} maxLength={5000} className="input" placeholder={`Why are you a great fit for ${job.companyName}?`} value={coverLetter} onChange={(e) => setCoverLetter(e.target.value)} />
       </Field>
       <div className="flex gap-2">
         <button type="button" className="btn-secondary flex-1" onClick={() => setOpen(false)}>Cancel</button>
-        <button className="btn-primary flex-1" disabled={isLoading}>{isLoading ? 'Sending…' : 'Submit application'}</button>
+        <button className="btn-primary flex-1" disabled={isLoading || (source === 'file' && !user.resumeFile)}>{isLoading ? 'Sending…' : 'Submit application'}</button>
       </div>
     </form>
   );

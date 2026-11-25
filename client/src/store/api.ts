@@ -29,6 +29,16 @@ const toQuery = (params: Record<string, QueryValue> = {}) => {
   return s ? `?${s}` : '';
 };
 
+// Some systems (often Windows) leave File.type empty for Word files.
+const resumeContentType = (file: File) => {
+  if (file.type) return file.type;
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  if (ext === 'pdf') return 'application/pdf';
+  if (ext === 'doc') return 'application/msword';
+  if (ext === 'docx') return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  return 'application/octet-stream';
+};
+
 type Session = { user: User; token: string };
 
 export const api = createApi({
@@ -72,6 +82,19 @@ export const api = createApi({
       query: (body) => ({ url: '/users/me', method: 'PATCH', body }),
       invalidatesTags: ['Me', 'Jobs', 'MyJobs'],
     }),
+    uploadResume: build.mutation<{ user: User }, File>({
+      query: (file) => ({
+        url: '/users/me/resume',
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': resumeContentType(file), 'X-File-Name': encodeURIComponent(file.name) },
+      }),
+      invalidatesTags: ['Me'],
+    }),
+    removeResume: build.mutation<{ user: User }, void>({
+      query: () => ({ url: '/users/me/resume', method: 'DELETE' }),
+      invalidatesTags: ['Me'],
+    }),
 
     // Jobs
     getJobs: build.query<Paginated<JobSummary>, JobFilters>({
@@ -101,7 +124,7 @@ export const api = createApi({
     }),
 
     // Applications
-    applyToJob: build.mutation<unknown, { id: string; coverLetter?: string; resumeUrl?: string }>({
+    applyToJob: build.mutation<unknown, { id: string; coverLetter?: string; resumeUrl?: string; resumeSource?: 'file' | 'link' }>({
       query: ({ id, ...body }) => ({ url: `/jobs/${id}/apply`, method: 'POST', body }),
       invalidatesTags: (_r, _e, { id }) => [{ type: 'Job', id }, 'MyApplications'],
     }),
@@ -140,6 +163,8 @@ export const api = createApi({
 });
 
 export const {
+  useUploadResumeMutation,
+  useRemoveResumeMutation,
   useGetMeQuery,
   useLoginMutation,
   useRegisterMutation,

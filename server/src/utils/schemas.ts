@@ -116,6 +116,8 @@ export type JobQuery = z.infer<typeof jobQuerySchema>;
 export const applySchema = z.object({
   coverLetter: z.string().trim().max(5000).optional(),
   resumeUrl: url.optional(),
+  /** Which resume to send. Defaults to the link if one is given, else the uploaded file, else the profile link. */
+  resumeSource: z.enum(['file', 'link']).optional(),
 });
 export type ApplyInput = z.infer<typeof applySchema>;
 

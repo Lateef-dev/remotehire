@@ -1,4 +1,6 @@
 import type { Request, Response } from 'express';
+import type { Types } from 'mongoose';
+import { deleteResumeIfUnused } from './resumes.controller.ts';
 import { Application, Job } from '../models/index.ts';
 import { ApiError } from '../utils/ApiError.ts';
 import { currentUser } from '../middleware/auth.ts';
@@ -16,8 +18,16 @@ export async function applyToJob(req: Request<IdParams>, res: Response) {
   if (!job) throw ApiError.notFound('Job not found');
   if (job.status !== 'open') throw ApiError.badRequest('This job is no longer accepting applications');
 
-  const resumeUrl = body.resumeUrl || candidate.resumeUrl;
-  if (!resumeUrl) throw ApiError.badRequest('Add a resume link to your profile or include one with your application');
+  const source = body.resumeSource ?? (body.resumeUrl ? 'link' : candidate.resumeFile ? 'file' : 'link');
+  let resumeUrl: string | undefined;
+  let resumeFile: { fileId: Types.ObjectId; name: string } | undefined;
+  if (source === 'file') {
+    if (!candidate.resumeFile) throw ApiError.badRequest('Upload your resume first');
+    resumeFile = { fileId: candidate.resumeFile.fileId, name: candidate.resumeFile.name };
+  } else {
+    resumeUrl = body.resumeUrl || candidate.resumeUrl;
+    if (!resumeUrl) throw ApiError.badRequest('Upload your resume or add a link to it');
+  }
 
   if (await Application.exists({ job: job._id, candidate: candidate._id })) {
     throw ApiError.conflict('You have already applied to this job');
@@ -29,6 +39,7 @@ export async function applyToJob(req: Request<IdParams>, res: Response) {
     employer: job.employer,
     coverLetter: body.coverLetter,
     resumeUrl,
+    resumeFile,
   });
   await Job.updateOne({ _id: job._id }, { $inc: { applicationsCount: 1 } });
 
@@ -75,6 +86,7 @@ export async function withdrawApplication(req: Request<IdParams>, res: Response)
     throw ApiError.badRequest('Applications can only be withdrawn before a decision is made');
   }
   await application.deleteOne();
+  if (application.resumeFile) await deleteResumeIfUnused(application.resumeFile.fileId);
   await Job.updateOne({ _id: application.job, applicationsCount: { $gt: 0 } }, { $inc: { applicationsCount: -1 } });
   res.status(204).end();
 }
